@@ -23,6 +23,41 @@ class MoltinConnection():
 
         return response.json()
 
+    def get_user_cart(self, userId):
+        self.__check_or_update_token()
+
+        response = requests.get(
+            f'{self.base_url}/v2/carts/{userId}',
+            headers={
+                'Authorization': f'Bearer {self.access_token}'
+            }
+        )
+        response.raise_for_status()
+
+        return response.json()
+
+    def add_to_cart(self, userId, productId, quantity=1):
+        self.__check_or_update_token()
+
+        product = {
+            'data': {
+                'id': productId,
+                'quantity': quantity,
+                'type': 'cart_item',
+            }
+        }
+
+        response = requests.post(
+            f'{self.base_url}/v2/carts/{userId}/items',
+            json=product,
+            headers={
+                'Authorization': f'Bearer {self.access_token}'
+            }
+        )
+        response.raise_for_status()
+
+        return response.json()
+
     def __check_or_update_token(self, grant_type='implicit'):
         now = datetime.now()
         ts = datetime.timestamp(now)
