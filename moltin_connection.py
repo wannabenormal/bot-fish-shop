@@ -23,11 +23,14 @@ class MoltinConnection():
 
         return response.json()
 
-    def get_user_cart(self, userId):
+    def get_product(self, product_id):
         self.__check_or_update_token()
 
         response = requests.get(
-            f'{self.base_url}/v2/carts/{userId}/items',
+            f'{self.base_url}/v2/products/{product_id}',
+            {
+                'include': 'main_image'
+            },
             headers={
                 'Authorization': f'Bearer {self.access_token}'
             }
@@ -36,7 +39,20 @@ class MoltinConnection():
 
         return response.json()
 
-    def add_to_cart(self, userId, productId, quantity=1):
+    def get_user_cart(self, user_id):
+        self.__check_or_update_token()
+
+        response = requests.get(
+            f'{self.base_url}/v2/carts/{user_id}/items',
+            headers={
+                'Authorization': f'Bearer {self.access_token}'
+            }
+        )
+        response.raise_for_status()
+
+        return response.json()
+
+    def add_to_cart(self, user_id, productId, quantity=1):
         self.__check_or_update_token()
 
         product = {
@@ -48,7 +64,7 @@ class MoltinConnection():
         }
 
         response = requests.post(
-            f'{self.base_url}/v2/carts/{userId}/items',
+            f'{self.base_url}/v2/carts/{user_id}/items',
             json=product,
             headers={
                 'Authorization': f'Bearer {self.access_token}'

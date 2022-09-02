@@ -27,13 +27,37 @@ def start(bot, update):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    return 'ECHO'
+    return 'HANDLE_MENU'
 
 
-def echo(bot, update):
-    update.message.reply_text(update.message.text)
+def handle_menu(bot, update):
+    if not update.callback_query:
+        return
 
-    return 'ECHO'
+    moltin = get_moltin_connection()
+    product_id = update.callback_query.data
+    chat_id = update.callback_query.message.chat_id
+
+    product = moltin.get_product(product_id)['data']
+
+    message = (
+        '{}\n\n'
+        '{} per kg\n'
+        '{}kg on stock\n\n'
+        '{}'
+    ).format(
+        product['name'],
+        product['meta']['display_price']['with_tax']['formatted'],
+        product['meta']['stock']['level'],
+        product['description']
+    )
+    
+    bot.send_message(
+        chat_id=chat_id,
+        text=message
+    )
+
+    return 'START'
 
 
 def user_reply_handler(bot, update):
@@ -55,7 +79,7 @@ def user_reply_handler(bot, update):
 
     states_handlers = {
         'START': start,
-        'ECHO': echo,
+        'HANDLE_MENU': handle_menu
     }
 
     state_handler = states_handlers[user_state]
@@ -101,7 +125,7 @@ if __name__ == '__main__':
     dp = updater.dispatcher
 
     dp.add_handler(MessageHandler(Filters.text, user_reply_handler))
-    dp.add_error_handler(CallbackQueryHandler(user_reply_handler))
+    dp.add_handler(CallbackQueryHandler(user_reply_handler))
     dp.add_handler(CommandHandler('start', user_reply_handler))
 
     updater.start_polling()
