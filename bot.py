@@ -1,15 +1,31 @@
 import os
 
-from dotenv import load_dotenv
 import redis
+from dotenv import load_dotenv
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Filters, Updater
-from telegram.ext import CommandHandler, MessageHandler
+from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler
+
+from moltin_connection import MoltinConnection
 
 _database = None
+_moltin = None
 
 
 def start(bot, update):
-    update.message.reply_text('Привет!')
+    moltin = get_moltin_connection()
+    products = moltin.get_products()
+
+    keyboard = [
+        [
+            InlineKeyboardButton(product['name'], callback_data=product['id'])
+        ] for product in products['data']
+    ]
+
+    update.message.reply_text(
+        'Привет!',
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
     return 'ECHO'
 
@@ -22,8 +38,15 @@ def echo(bot, update):
 
 def user_reply_handler(bot, update):
     db = get_database_connection()
-    user_reply = update.message.text
-    chat_id = update.message.chat_id
+
+    if update.message:
+        user_reply = update.message.text
+        chat_id = update.message.chat_id
+    elif update.callback_query:
+        user_reply = update.callback_query.data
+        chat_id = update.callback_query.message.chat_id
+    else:
+        return
 
     if user_reply == '/start':
         user_state = 'START'
@@ -32,7 +55,7 @@ def user_reply_handler(bot, update):
 
     states_handlers = {
         'START': start,
-        'ECHO': echo
+        'ECHO': echo,
     }
 
     state_handler = states_handlers[user_state]
@@ -59,6 +82,17 @@ def get_database_connection():
     return _database
 
 
+def get_moltin_connection():
+    global _moltin
+
+    if _moltin is None:
+        base_url = os.getenv('MOLTIN_BASE_URL')
+        client_id = os.getenv('MOLTIN_CLIENT_ID')
+        _moltin = MoltinConnection(base_url, client_id)
+
+    return _moltin
+
+
 if __name__ == '__main__':
     load_dotenv()
 
@@ -67,6 +101,7 @@ if __name__ == '__main__':
     dp = updater.dispatcher
 
     dp.add_handler(MessageHandler(Filters.text, user_reply_handler))
+    dp.add_error_handler(CallbackQueryHandler(user_reply_handler))
     dp.add_handler(CommandHandler('start', user_reply_handler))
 
     updater.start_polling()

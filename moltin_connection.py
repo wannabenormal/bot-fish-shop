@@ -27,7 +27,7 @@ class MoltinConnection():
         self.__check_or_update_token()
 
         response = requests.get(
-            f'{self.base_url}/v2/carts/{userId}',
+            f'{self.base_url}/v2/carts/{userId}/items',
             headers={
                 'Authorization': f'Bearer {self.access_token}'
             }
