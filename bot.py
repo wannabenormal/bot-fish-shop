@@ -38,7 +38,7 @@ def handle_menu(bot, update):
     product_id = update.callback_query.data
     chat_id = update.callback_query.message.chat_id
 
-    product = moltin.get_product(product_id)['data']
+    product = moltin.get_product(product_id)
 
     message = (
         '{}\n\n'
@@ -46,16 +46,29 @@ def handle_menu(bot, update):
         '{}kg on stock\n\n'
         '{}'
     ).format(
-        product['name'],
-        product['meta']['display_price']['with_tax']['formatted'],
-        product['meta']['stock']['level'],
-        product['description']
+        product['data']['name'],
+        product['data']['meta']['display_price']['with_tax']['formatted'],
+        product['data']['meta']['stock']['level'],
+        product['data']['description']
     )
-    
-    bot.send_message(
+
+    bot.delete_message(
         chat_id=chat_id,
-        text=message
+        message_id=update.callback_query.message.message_id
     )
+
+    if 'included' in product and 'main_images' in product['included']:
+        image_url = product['included']['main_images'][0]['link']['href']
+        bot.send_photo(
+            chat_id=chat_id,
+            photo=image_url,
+            caption=message
+        )
+    else:
+        bot.send_message(
+            chat_id=chat_id,
+            text=message
+        )
 
     return 'START'
 
