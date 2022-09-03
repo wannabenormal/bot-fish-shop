@@ -12,7 +12,22 @@ _database = None
 _moltin = None
 
 
-def start(bot, update):
+def get_user_response(update):
+    if update.message:
+        user_reply = update.message.text
+        chat_id = update.message.chat_id
+        message_id = update.message.message_id
+    elif update.callback_query:
+        user_reply = update.callback_query.data
+        chat_id = update.callback_query.message.chat_id
+        message_id = update.callback_query.message.message_id
+    else:
+        return
+
+    return user_reply, chat_id, message_id
+
+
+def show_menu(bot, update):
     moltin = get_moltin_connection()
     products = moltin.get_products()
 
@@ -22,10 +37,15 @@ def start(bot, update):
         ] for product in products['data']
     ]
 
-    update.message.reply_text(
-        'Привет!',
+    bot.send_message(
+        text='Меню:',
+        chat_id=update.effective_chat.id,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
+
+
+def start(bot, update):
+    show_menu(bot, update)
 
     return 'HANDLE_MENU'
 
@@ -57,33 +77,50 @@ def handle_menu(bot, update):
         message_id=update.callback_query.message.message_id
     )
 
+    keyboard = [
+        [
+            InlineKeyboardButton('Назад', callback_data='show_menu')
+        ]
+    ]
+
     if 'included' in product and 'main_images' in product['included']:
         image_url = product['included']['main_images'][0]['link']['href']
         bot.send_photo(
             chat_id=chat_id,
             photo=image_url,
-            caption=message
+            caption=message,
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
     else:
         bot.send_message(
             chat_id=chat_id,
-            text=message
+            text=message,
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    return 'START'
+    return 'HANDLE_DESCRIPTION'
+
+
+def handle_description(bot, update):
+    user_reply, chat_id, message_id = get_user_response(update)
+
+    bot.delete_message(
+        chat_id=chat_id,
+        message_id=message_id
+    )
+
+    if user_reply == 'show_menu':
+        show_menu(bot, update)
+
+        return 'HANDLE_MENU'
+    else:
+        return 'HANDLE_DESCRIPTION'
 
 
 def user_reply_handler(bot, update):
     db = get_database_connection()
 
-    if update.message:
-        user_reply = update.message.text
-        chat_id = update.message.chat_id
-    elif update.callback_query:
-        user_reply = update.callback_query.data
-        chat_id = update.callback_query.message.chat_id
-    else:
-        return
+    user_reply, chat_id, _ = get_user_response(update)
 
     if user_reply == '/start':
         user_state = 'START'
@@ -92,7 +129,8 @@ def user_reply_handler(bot, update):
 
     states_handlers = {
         'START': start,
-        'HANDLE_MENU': handle_menu
+        'HANDLE_MENU': handle_menu,
+        'HANDLE_DESCRIPTION': handle_description
     }
 
     state_handler = states_handlers[user_state]
