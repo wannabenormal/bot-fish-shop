@@ -37,10 +37,49 @@ def show_menu(bot, update):
         ] for product in products['data']
     ]
 
+    keyboard.append([
+        InlineKeyboardButton('Корзина', callback_data='show_cart'),
+    ])
+
     bot.send_message(
         text='Меню:',
         chat_id=update.effective_chat.id,
         reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+def show_cart(bot, update):
+    _, chat_id, _ = get_user_response(update)
+    moltin = get_moltin_connection()
+    cart = moltin.get_user_cart(update.effective_chat.id)
+
+    cart_items = [
+        (
+            '{}\n'
+            '{}\n'
+            '{} per kg\n'
+            '{}kg in cart for {}'
+        ).format(
+            item['name'],
+            item['description'],
+            item['meta']['display_price']['with_tax']['unit']['formatted'],
+            item['quantity'],
+            item['meta']['display_price']['with_tax']['value']['formatted']
+        )
+        for item in cart['data']
+    ]
+
+    message = (
+        '{}'
+        '\n\n Total: {}'
+    ).format(
+        '\n\n'.join(cart_items),
+        cart['meta']['display_price']['with_tax']['formatted']
+    )
+
+    bot.send_message(
+        text=message,
+        chat_id=update.effective_chat.id,
     )
 
 
@@ -53,6 +92,10 @@ def start(bot, update):
 def handle_menu(bot, update):
     if not update.callback_query:
         return
+
+    if update.callback_query.data == 'show_cart':
+        show_cart(bot, update)
+        return 'HANDLE_MENU'
 
     moltin = get_moltin_connection()
     product_id = update.callback_query.data
@@ -85,6 +128,7 @@ def handle_menu(bot, update):
 
         ],
         [
+            InlineKeyboardButton('Корзина', callback_data='show_cart'),
             InlineKeyboardButton('Назад', callback_data='show_menu')
         ]
     ]
@@ -118,6 +162,10 @@ def handle_description(bot, update):
         show_menu(bot, update)
 
         return 'HANDLE_MENU'
+    elif user_reply == 'show_cart':
+        show_cart(bot, update)
+
+        return 'HANDLE_DESCRIPTION'
     else:
         moltin = get_moltin_connection()
         product_id, quantity = user_reply.split('_')
