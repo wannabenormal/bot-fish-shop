@@ -81,7 +81,8 @@ def show_cart(bot, update):
 
     keyboard.append(
         [
-            InlineKeyboardButton('В меню', callback_data='show_menu')
+            InlineKeyboardButton('Оплатить', callback_data='get_contact'),
+            InlineKeyboardButton('В меню', callback_data='show_menu'),
         ]
     )
 
@@ -202,6 +203,17 @@ def handle_description(bot, update):
         return 'HANDLE_DESCRIPTION'
 
 
+def handle_email(bot, update):
+    user_reply, chat_id, _ = get_user_response(update)
+
+    bot.send_message(
+        chat_id=chat_id,
+        text=f'Вы отправили следующий email: {user_reply}'
+    )
+
+    return 'START'
+
+
 def handle_cart(bot, update):
     user_reply, chat_id, message_id = get_user_response(update)
     moltin = get_moltin_connection()
@@ -214,6 +226,15 @@ def handle_cart(bot, update):
     if user_reply == 'show_menu':
         show_menu(bot, update)
         return 'HANDLE_MENU'
+
+    elif user_reply == 'get_contact':
+        bot.send_message(
+            chat_id=chat_id,
+            text='Пожалуйста, введите ваш email:'
+        )
+
+        return 'WAITING_EMAIL'
+
     else:
         product_id = user_reply.replace('delete_', '')
         moltin.delete_from_cart(chat_id, product_id)
@@ -236,7 +257,8 @@ def user_reply_handler(bot, update):
         'START': start,
         'HANDLE_MENU': handle_menu,
         'HANDLE_DESCRIPTION': handle_description,
-        'HANDLE_CART': handle_cart
+        'HANDLE_CART': handle_cart,
+        'WAITING_EMAIL': handle_email
     }
 
     state_handler = states_handlers[user_state]
