@@ -79,6 +79,12 @@ def handle_menu(bot, update):
 
     keyboard = [
         [
+            InlineKeyboardButton('1kg', callback_data=f'{product_id}_1'),
+            InlineKeyboardButton('5kg', callback_data=f'{product_id}_5'),
+            InlineKeyboardButton('10kg', callback_data=f'{product_id}_10'),
+
+        ],
+        [
             InlineKeyboardButton('Назад', callback_data='show_menu')
         ]
     ]
@@ -104,16 +110,20 @@ def handle_menu(bot, update):
 def handle_description(bot, update):
     user_reply, chat_id, message_id = get_user_response(update)
 
-    bot.delete_message(
-        chat_id=chat_id,
-        message_id=message_id
-    )
-
     if user_reply == 'show_menu':
+        bot.delete_message(
+            chat_id=chat_id,
+            message_id=message_id
+        )
         show_menu(bot, update)
 
         return 'HANDLE_MENU'
     else:
+        moltin = get_moltin_connection()
+        product_id, quantity = user_reply.split('_')
+
+        moltin.add_to_cart(chat_id, product_id, int(quantity))
+
         return 'HANDLE_DESCRIPTION'
 
 

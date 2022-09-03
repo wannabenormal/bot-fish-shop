@@ -52,12 +52,12 @@ class MoltinConnection():
 
         return response.json()
 
-    def add_to_cart(self, user_id, productId, quantity=1):
+    def add_to_cart(self, user_id, product_id, quantity=1):
         self.__check_or_update_token()
 
         product = {
             'data': {
-                'id': productId,
+                'id': product_id,
                 'quantity': quantity,
                 'type': 'cart_item',
             }
