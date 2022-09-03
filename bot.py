@@ -206,6 +206,13 @@ def handle_description(bot, update):
 def handle_email(bot, update):
     user_reply, chat_id, _ = get_user_response(update)
 
+    moltin = get_moltin_connection()
+
+    moltin.add_customer(
+        update['message']['chat']['username'],
+        user_reply
+    )
+
     bot.send_message(
         chat_id=chat_id,
         text=f'Вы отправили следующий email: {user_reply}'

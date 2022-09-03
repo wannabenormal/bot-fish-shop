@@ -87,6 +87,27 @@ class MoltinConnection():
 
         return response.json()
 
+    def add_customer(self, name, email):
+        self.__check_or_update_token()
+
+        response = requests.post(
+            f'{self.base_url}/v2/customers',
+            json={
+                'data': {
+                    'type': 'customer',
+                    'name': name,
+                    'email': email
+                }
+            },
+            headers={
+                'Authorization': f'Bearer {self.access_token}'
+            }
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
     def __check_or_update_token(self, grant_type='implicit'):
         now = datetime.now()
         ts = datetime.timestamp(now)
