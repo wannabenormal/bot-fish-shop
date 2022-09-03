@@ -69,6 +69,22 @@ def show_cart(bot, update):
         for item in cart['data']
     ]
 
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                'Удалить {}'.format(item['name']),
+                callback_data='delete_{}'.format(item['id'])
+            )
+
+        ] for item in cart['data']
+    ]
+
+    keyboard.append(
+        [
+            InlineKeyboardButton('В меню', callback_data='show_menu')
+        ]
+    )
+
     message = (
         '{}'
         '\n\n Total: {}'
@@ -80,6 +96,7 @@ def show_cart(bot, update):
     bot.send_message(
         text=message,
         chat_id=update.effective_chat.id,
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
@@ -93,12 +110,18 @@ def handle_menu(bot, update):
     if not update.callback_query:
         return
 
-    if update.callback_query.data == 'show_cart':
+    user_reply, chat_id, message_id = get_user_response(update)
+
+    if user_reply == 'show_cart':
+        bot.delete_message(
+            chat_id=chat_id,
+            message_id=message_id
+        )
         show_cart(bot, update)
-        return 'HANDLE_MENU'
+        return 'HANDLE_CART'
 
     moltin = get_moltin_connection()
-    product_id = update.callback_query.data
+    product_id = user_reply
     chat_id = update.callback_query.message.chat_id
 
     product = moltin.get_product(product_id)
@@ -163,9 +186,13 @@ def handle_description(bot, update):
 
         return 'HANDLE_MENU'
     elif user_reply == 'show_cart':
+        bot.delete_message(
+            chat_id=chat_id,
+            message_id=message_id
+        )
         show_cart(bot, update)
 
-        return 'HANDLE_DESCRIPTION'
+        return 'HANDLE_CART'
     else:
         moltin = get_moltin_connection()
         product_id, quantity = user_reply.split('_')
@@ -173,6 +200,26 @@ def handle_description(bot, update):
         moltin.add_to_cart(chat_id, product_id, int(quantity))
 
         return 'HANDLE_DESCRIPTION'
+
+
+def handle_cart(bot, update):
+    user_reply, chat_id, message_id = get_user_response(update)
+    moltin = get_moltin_connection()
+
+    bot.delete_message(
+        chat_id=chat_id,
+        message_id=message_id
+    )
+
+    if user_reply == 'show_menu':
+        show_menu(bot, update)
+        return 'HANDLE_MENU'
+    else:
+        product_id = user_reply.replace('delete_', '')
+        moltin.delete_from_cart(chat_id, product_id)
+        show_cart(bot, update)
+
+        return 'HANDLE_CART'
 
 
 def user_reply_handler(bot, update):
@@ -188,7 +235,8 @@ def user_reply_handler(bot, update):
     states_handlers = {
         'START': start,
         'HANDLE_MENU': handle_menu,
-        'HANDLE_DESCRIPTION': handle_description
+        'HANDLE_DESCRIPTION': handle_description,
+        'HANDLE_CART': handle_cart
     }
 
     state_handler = states_handlers[user_state]

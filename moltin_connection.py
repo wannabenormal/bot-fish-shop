@@ -74,6 +74,19 @@ class MoltinConnection():
 
         return response.json()
 
+    def delete_from_cart(self, user_id, product_id):
+        self.__check_or_update_token()
+
+        response = requests.delete(
+            f'{self.base_url}/v2/carts/{user_id}/items/{product_id}',
+            headers={
+                'Authorization': f'Bearer {self.access_token}'
+            }
+        )
+        response.raise_for_status()
+
+        return response.json()
+
     def __check_or_update_token(self, grant_type='implicit'):
         now = datetime.now()
         ts = datetime.timestamp(now)
