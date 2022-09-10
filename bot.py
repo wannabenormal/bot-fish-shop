@@ -13,16 +13,13 @@ _moltin = None
 
 
 def get_user_response(update):
+    chat_id = update.effective_message.chat.id
+    message_id = update.effective_message.message_id
+
     if update.message:
         user_reply = update.message.text
-        chat_id = update.message.chat_id
-        message_id = update.message.message_id
-    elif update.callback_query:
-        user_reply = update.callback_query.data
-        chat_id = update.callback_query.message.chat_id
-        message_id = update.callback_query.message.message_id
     else:
-        return
+        user_reply = update.callback_query.data
 
     return user_reply, chat_id, message_id
 
