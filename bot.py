@@ -52,16 +52,10 @@ def show_cart(bot, update):
 
     cart_items = [
         (
-            '{}\n'
-            '{}\n'
-            '{} per kg\n'
-            '{}kg in cart for {}'
-        ).format(
-            item['name'],
-            item['description'],
-            item['meta']['display_price']['with_tax']['unit']['formatted'],
-            item['quantity'],
-            item['meta']['display_price']['with_tax']['value']['formatted']
+            f'{item["name"]}\n'
+            f'{item["description"]}\n'
+            f'{item["meta"]["display_price"]["with_tax"]["unit"]["formatted"]} per kg\n'
+            f'{item["quantity"]}kg in cart for {item["meta"]["display_price"]["with_tax"]["value"]["formatted"]}'
         )
         for item in cart['data']
     ]
@@ -125,15 +119,10 @@ def handle_menu(bot, update):
     product = moltin.get_product(product_id)
 
     message = (
-        '{}\n\n'
-        '{} per kg\n'
-        '{}kg on stock\n\n'
-        '{}'
-    ).format(
-        product['data']['name'],
-        product['data']['meta']['display_price']['with_tax']['formatted'],
-        product['data']['meta']['stock']['level'],
-        product['data']['description']
+        f'{product["data"]["name"]}\n\n'
+        '{product["data"]["meta"]["display_price"]["with_tax"]["formatted"]} per kg\n'
+        '{product["data"]["meta"]["stock"]["level"]}kg on stock\n\n'
+        '{product["data"]["description"]}'
     )
 
     bot.delete_message(
