@@ -1,4 +1,5 @@
 import os
+from textwrap import dedent
 
 import redis
 from dotenv import load_dotenv
@@ -51,11 +52,13 @@ def show_cart(bot, update):
     cart = moltin.get_user_cart(update.effective_chat.id)
 
     cart_items = [
-        (
-            f'{item["name"]}\n'
-            f'{item["description"]}\n'
-            f'{item["meta"]["display_price"]["with_tax"]["unit"]["formatted"]} per kg\n'
-            f'{item["quantity"]}kg in cart for {item["meta"]["display_price"]["with_tax"]["value"]["formatted"]}'
+        dedent(
+            f'''
+                {item["name"]}
+                {item["description"]}
+                {item["meta"]["display_price"]["with_tax"]["unit"]["formatted"]} per kg
+                {item["quantity"]}kg in cart for {item["meta"]["display_price"]["with_tax"]["value"]["formatted"]}
+            '''
         )
         for item in cart['data']
     ]
@@ -79,9 +82,9 @@ def show_cart(bot, update):
 
     message = (
         '{}'
-        '\n\n Total: {}'
+        '\n Total: {}'
     ).format(
-        '\n\n'.join(cart_items),
+        ''.join(cart_items),
         cart['meta']['display_price']['with_tax']['formatted']
     )
 
@@ -118,11 +121,13 @@ def handle_menu(bot, update):
 
     product = moltin.get_product(product_id)
 
-    message = (
-        f'{product["data"]["name"]}\n\n'
-        '{product["data"]["meta"]["display_price"]["with_tax"]["formatted"]} per kg\n'
-        '{product["data"]["meta"]["stock"]["level"]}kg on stock\n\n'
-        '{product["data"]["description"]}'
+    message = dedent(
+        f'''
+            {product["data"]["name"]}
+            {product["data"]["meta"]["display_price"]["with_tax"]["formatted"]} per kg
+            {product["data"]["meta"]["stock"]["level"]}kg on stock
+            {product["data"]["description"]}
+        '''
     )
 
     bot.delete_message(
